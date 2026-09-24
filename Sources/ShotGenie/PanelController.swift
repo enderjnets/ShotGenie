@@ -13,6 +13,7 @@ final class KeyPanel: NSPanel {
 final class PanelController: NSObject, NSWindowDelegate {
     private let store: CaptureStore
     private var panel: KeyPanel?
+    private let standIn = StandInIcon()
     /// Se llama tras copiar desde el panel (el icono se pone verde y se devuelve el foco).
     var onCopied: ((Capture, FanView.CopyKind) -> Void)?
     var onOpenFolder: (() -> Void)?
@@ -20,6 +21,8 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     init(store: CaptureStore) {
         self.store = store
+        super.init()
+        standIn.onClick = { [weak self] in self?.close(returnFocus: true) }
     }
 
     var isVisible: Bool { panel?.isVisible == true }
@@ -72,6 +75,10 @@ final class PanelController: NSObject, NSWindowDelegate {
         self.panel = panel
         // Que el Dock no se esconda mientras se elige (si no, el abanico queda colgando).
         DockAutoHide.suspend()
+        // En pantalla completa el Dock se esconde igualmente: icono de relevo bajo el abanico.
+        if iconTop != nil, let iconFrame = DockLocator.iconFrame() {
+            standIn.start(iconFrame: iconFrame, screen: screen.frame)
+        }
         // Panel «no activador»: macOS solo deja estas ventanas encima de la pantalla completa de
         // otra app (una ventana normal se queda en el escritorio, invisible). Puede ser la ventana
         // clave (Esc) sin activar la app, y así tampoco salta a otro escritorio.
@@ -100,6 +107,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.delegate = nil
         panel.orderOut(nil)
         self.panel = nil
+        standIn.stop()
         DockAutoHide.resume()
         if shouldReturn { returnFocus?() }
     }
