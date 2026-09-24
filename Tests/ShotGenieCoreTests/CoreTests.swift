@@ -124,12 +124,12 @@ import Testing
 @Suite struct RelativeTimeTests {
     let now = Date(timeIntervalSince1970: 2_000_000)
 
-    @Test func spanishShortForms() {
-        #expect(RelativeTime.format(now.addingTimeInterval(-12), now: now) == "hace 12 s")
-        #expect(RelativeTime.format(now.addingTimeInterval(-200), now: now) == "hace 3 min")
-        #expect(RelativeTime.format(now.addingTimeInterval(-3_700), now: now) == "hace 1 h")
-        #expect(RelativeTime.format(now.addingTimeInterval(-200_000), now: now) == "hace 2 d")
-        #expect(RelativeTime.format(now.addingTimeInterval(5), now: now) == "ahora")
+    @Test func largestUnitThatFits() {
+        #expect(RelativeTime.ago(now.addingTimeInterval(-12), now: now)! == (12, .seconds))
+        #expect(RelativeTime.ago(now.addingTimeInterval(-200), now: now)! == (3, .minutes))
+        #expect(RelativeTime.ago(now.addingTimeInterval(-3_700), now: now)! == (1, .hours))
+        #expect(RelativeTime.ago(now.addingTimeInterval(-200_000), now: now)! == (2, .days))
+        #expect(RelativeTime.ago(now.addingTimeInterval(5), now: now) == nil)
     }
 }
 

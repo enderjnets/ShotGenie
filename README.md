@@ -6,6 +6,8 @@ A macOS Dock app for your latest screenshots. Take a screenshot with ⌘⇧4 as 
 
 It was built to stop hunting through Finder for the screenshot you just took so you can paste it into Claude Code.
 
+<p align="center"><img src="docs/genie.gif" width="720" alt="A screenshot genies into the ShotGenie icon in the Dock"></p>
+
 ## What it does
 
 - **Live Dock icon.** The icon shows the latest screenshot, with a gold camera badge (green check right after copying).
@@ -14,6 +16,22 @@ It was built to stop hunting through Finder for the screenshot you just took so 
 - **Copy image or path.** Click a screenshot to copy the image itself (PNG + TIFF, no file URL, so terminals paste the image and not the path). The "Ruta" pill copies the path, escaped with backslashes like a Finder drag into Terminal.
 - **Dock menu.** Right-click the icon for a text menu with the last 5 screenshots; each item also has a ⌥ alternate that copies the path, plus "copy path of the latest" and "open screenshots folder". The Dock does not draw images in its menus, so this one is text only.
 - **Focus goes back.** After copying, the app you were using becomes active again, so ⌘V goes straight to it.
+
+## Screenshots
+
+**Click the Dock icon: the fan.** The screenshot under the cursor is magnified; click it to copy the image, or click "Path" to copy its path.
+
+<p align="center"><img src="docs/fan.png" width="560" alt="Fan of the last five screenshots above the Dock, one magnified"></p>
+
+**The icon is always your latest screenshot.** It turns green for a moment after copying.
+
+<p align="center"><img src="docs/icon-states.png" width="560" alt="App icon, icon with the latest screenshot, icon after copying"></p>
+
+**Settings (⌘,)** for the magnifier strength and the genie effect.
+
+<p align="center"><img src="docs/settings.png" width="380" alt="Settings window"></p>
+
+The images are made from sample screenshots by `scripts/docs/render.sh` (needs Google Chrome and ffmpeg), using the app's own views.
 
 ## Requirements
 
@@ -60,7 +78,7 @@ Checked in September 2026. Each covers part of this; none of the ones found comb
 
 ## Notes
 
-- The interface is in Spanish.
+- The interface follows your macOS language. English and Spanish are included; other languages fall back to English. To add one, copy `Resources/es.lproj` and translate it.
 - The bundle identifier is `com.enderj.screencapture` (the project's earlier name); it is kept so existing installs keep their permission and settings.
 - Debug-only defaults (`defaults write com.enderj.screencapture <key> <value>`): `debugIconPath`, `debugPanelPath` + `debugHover`, `debugGenieDir`, `debugGenieScreen`, `debugStatusPath`. They write renders to disk so the UI can be checked without looking at the screen.
 
@@ -72,7 +90,7 @@ Checked in September 2026. Each covers part of this; none of the ones found comb
 
 ## En español
 
-ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal. Compílala con `scripts/build.sh`. La interfaz está en español.
+ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal. Compílala con `scripts/build.sh`. La interfaz sale en español si tu macOS está en español.
 
 ## License
 

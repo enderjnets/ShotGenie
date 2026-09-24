@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><style>
+body{margin:0;background:#1e1f24;font:15px/1.6 Menlo,monospace;color:#d4d7de;height:100vh;display:grid;grid-template-columns:240px 1fr}
+.side{background:#18191d;padding:18px;color:#8b90a0;font:13px/2 -apple-system,sans-serif}.side b{color:#e8eaf0}
+.bar{height:34px;background:#26272d;display:flex;gap:8px;align-items:center;padding:0 14px}.d{width:12px;height:12px;border-radius:6px}
+pre{margin:0;padding:22px 28px}.k{color:#ff7ab2}.t{color:#6bdfff}.s{color:#fc6a5d}.c{color:#6c7986}.n{color:#d0bf69}.f{color:#67b7a4}
+</style><div class="side"><b>ShotGenie</b><br>▾ Sources<br>&nbsp;&nbsp;▾ ShotGenieCore<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>Core.swift</b><br>&nbsp;&nbsp;▸ ShotGenie<br>▸ Tests<br>▸ scripts<br>README.md</div>
+<div><div class="bar"><span class="d" style="background:#ff5f57"></span><span class="d" style="background:#febc2e"></span><span class="d" style="background:#28c840"></span><span style="margin-left:14px;font:13px -apple-system;color:#aab">Core.swift</span></div><pre>
+<span class="c">/// One horizontal strip of the genie funnel.</span>
+<span class="k">public static func</span> <span class="f">strip</span>(v0: <span class="t">CGFloat</span>, v1: <span class="t">CGFloat</span>, rect: <span class="t">CGRect</span>,
+                         target: <span class="t">CGPoint</span>, curve: <span class="t">Double</span>, slide: <span class="t">Double</span>) -> <span class="t">Strip</span>? {
+    <span class="k">let</span> travel = target.y - rect.minY
+    <span class="k">let</span> offset = slide * travel
+    <span class="k">let</span> y0 = rect.minY + v0 * rect.height + offset
+    <span class="k">let</span> y1 = rect.minY + v1 * rect.height + offset
+    <span class="k">guard</span> y0 &lt; target.y <span class="k">else</span> { <span class="k">return nil</span> }
+
+    <span class="c">// Narrow toward the icon with a smoothstep.</span>
+    <span class="k">func</span> <span class="f">edges</span>(<span class="k">_</span> y: <span class="t">CGFloat</span>) -> (<span class="t">CGFloat</span>, <span class="t">CGFloat</span>) {
+        <span class="k">let</span> u = <span class="f">smooth</span>((y - rect.minY) / (target.y - rect.minY)) * curve
+        <span class="k">let</span> left  = rect.minX + (target.x - Genie.targetWidth / <span class="n">2</span> - rect.minX) * u
+        <span class="k">let</span> right = rect.maxX + (target.x + Genie.targetWidth / <span class="n">2</span> - rect.maxX) * u
+        <span class="k">return</span> (left, right)
+    }
+    <span class="k">let</span> (l0, r0) = <span class="f">edges</span>(y0), (l1, r1) = <span class="f">edges</span>(<span class="f">min</span>(y1, target.y))
+    <span class="k">return</span> <span class="t">Strip</span>(dest: <span class="t">CGRect</span>(x: <span class="f">min</span>(l0, l1), y: y0, width: <span class="f">max</span>(r0, r1) - <span class="f">min</span>(l0, l1), height: y1 - y0),
+                 image: <span class="f">imageRect</span>(v0, v1, rect))
+}</pre></div>

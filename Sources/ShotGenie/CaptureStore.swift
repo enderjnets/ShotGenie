@@ -22,8 +22,12 @@ final class CaptureStore {
     @ObservationIgnored private var source: DispatchSourceFileSystemObject?
     @ObservationIgnored private var pendingReload: DispatchWorkItem?
 
-    init() {
-        folder = CaptureStore.configuredFolder()
+    /// Carpeta fija en vez de la de macOS (solo para generar las imágenes del README).
+    @ObservationIgnored private let fixedFolder: URL?
+
+    init(folder: URL? = nil) {
+        fixedFolder = folder
+        self.folder = folder ?? CaptureStore.configuredFolder()
     }
 
     /// La carpeta que usa macOS para las capturas (`defaults read com.apple.screencapture location`).
@@ -34,7 +38,7 @@ final class CaptureStore {
     }
 
     func start() {
-        let current = CaptureStore.configuredFolder()
+        let current = fixedFolder ?? CaptureStore.configuredFolder()
         if current != folder || source == nil {
             folder = current
             watch()

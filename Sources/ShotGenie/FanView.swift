@@ -75,7 +75,7 @@ struct FanView: View {
         return HStack(spacing: FanLayout.gap) {
             HStack(spacing: 6) {
                 if active {
-                    pill("Ruta", systemImage: "link", fill: Self.pillFill) { copy(capture, .path) }
+                    pill(String(localized: "Path"), systemImage: "link", fill: Self.pillFill) { copy(capture, .path) }
                         .transition(.opacity.combined(with: .move(edge: .trailing)))
                 }
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -96,13 +96,13 @@ struct FanView: View {
             }
             .buttonStyle(.plain)
             .frame(width: FanLayout.thumb.width, height: FanLayout.thumb.height, alignment: .leading)
-            .accessibilityLabel("Copiar imagen de la captura de \(RelativeTime.format(capture.created))")
+            .accessibilityLabel(String(localized: "Copy image of the screenshot from \(Texts.ago(capture.created))"))
         }
     }
 
     private func folderRow(hidden: Int) -> some View {
         HStack(spacing: FanLayout.gap) {
-            pill(hidden > 0 ? "\(Self.number(hidden)) más en Finder" : "Abrir en Finder", systemImage: nil, fill: Self.pillFill, action: onOpenFolder)
+            pill(hidden > 0 ? String(localized: "\(Texts.number(hidden)) more in Finder") : String(localized: "Open in Finder"), systemImage: nil, fill: Self.pillFill, action: onOpenFolder)
                 .frame(width: FanLayout.labelWidth, alignment: .trailing)
             Button(action: onOpenFolder) {
                 Image(systemName: "arrowshape.turn.up.right.fill")
@@ -115,7 +115,7 @@ struct FanView: View {
             }
             .buttonStyle(.plain)
             .frame(width: FanLayout.thumb.width, height: FanLayout.thumb.height)
-            .accessibilityLabel("Abrir la carpeta de capturas")
+            .accessibilityLabel(String(localized: "Open screenshots folder"))
         }
     }
 
@@ -151,23 +151,14 @@ struct FanView: View {
 
     private func label(_ capture: Capture, now: Date) -> String {
         if let copied, copied.url == capture.url {
-            return copied.kind == .image ? "Imagen copiada ✓" : "Ruta copiada ✓"
+            return copied.kind == .image ? String(localized: "Image copied ✓") : String(localized: "Path copied ✓")
         }
-        return "Captura · \(RelativeTime.format(capture.created, now: now))"
+        return String(localized: "Screenshot · \(Texts.ago(capture.created, now: now))")
     }
 
     private func pillColor(_ capture: Capture, active: Bool) -> Color {
         if let copied, copied.url == capture.url { return Self.copiedGreen }
         return active ? Self.accent : Self.pillFill
-    }
-
-    private static func number(_ n: Int) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.locale = Locale(identifier: "es_ES")
-        f.usesGroupingSeparator = true
-        f.minimumGroupingDigits = 1
-        return f.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
     private func copy(_ capture: Capture, _ kind: CopyKind) {

@@ -1,0 +1,44 @@
+/* ShotGenie en español. Las claves son el texto en inglés. */
+
+/* Menú del Dock y menú de la app */
+"Latest screenshots" = "Últimas capturas";
+"No screenshots yet" = "Aún no hay capturas";
+"Screenshot · %@" = "Captura · %@";
+"Copy path · %@" = "Copiar ruta · %@";
+"Click copies the image · with ⌥, the path" = "Clic: copia la imagen · con ⌥: la ruta";
+"Copy path of the latest" = "Copiar ruta de la última";
+"Open screenshots folder" = "Abrir carpeta de capturas";
+"Settings…" = "Ajustes…";
+"Open at login" = "Abrir al iniciar sesión";
+"Quit ShotGenie" = "Salir de ShotGenie";
+
+/* Tiempo relativo */
+"now" = "ahora";
+"%lld s ago" = "hace %lld s";
+"%lld min ago" = "hace %lld min";
+"%lld h ago" = "hace %lld h";
+"%lld d ago" = "hace %lld d";
+
+/* Abanico */
+"Path" = "Ruta";
+"Copy image of the screenshot from %@" = "Copiar imagen de la captura de %@";
+"%@ more in Finder" = "%@ más en Finder";
+"Open in Finder" = "Abrir en Finder";
+"Image copied ✓" = "Imagen copiada ✓";
+"Path copied ✓" = "Ruta copiada ✓";
+
+/* Ajustes */
+"ShotGenie Settings" = "Ajustes de ShotGenie";
+"Magnifier" = "Efecto lupa";
+"How much a screenshot grows when the cursor passes over it in the fan." = "Cuánto se amplía una captura al pasar el cursor por el abanico.";
+"Magnifier zoom" = "Ampliación de la lupa";
+"At rest" = "En reposo";
+"Magnified" = "Con la lupa";
+"Genie effect on capture" = "Efecto genio al capturar";
+"The screenshot appears large and genies into the Dock icon." = "La captura aparece en grande y se mete en el icono del Dock.";
+"The genie goes exactly to the Dock icon" = "El genio va exacto al icono del Dock";
+"The genie goes where you last clicked the icon" = "El genio va a donde hiciste clic en el icono";
+"To always hit the exact spot, allow Accessibility. The app only reads the position of its own icon." = "Para ir siempre al sitio exacto, permite Accesibilidad. La app solo lee la posición de su propio icono.";
+"Allow…" = "Permitir…";
+"The magnifier applies the next time you open the fan." = "La lupa se aplica la próxima vez que abras el abanico.";
+"Reset" = "Restablecer";

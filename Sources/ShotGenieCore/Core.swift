@@ -287,15 +287,19 @@ public enum DockGeometry {
     }
 }
 
+/// Cuánto hace de una fecha, en la unidad más grande que cabe (el texto lo pone la app, traducido).
 public enum RelativeTime {
-    public static func format(_ date: Date, now: Date = Date()) -> String {
+    public enum Unit { case seconds, minutes, hours, days }
+
+    /// `nil` = ahora mismo (menos de un segundo, o en el futuro).
+    public static func ago(_ date: Date, now: Date = Date()) -> (value: Int, unit: Unit)? {
         let s = Int(now.timeIntervalSince(date))
         switch s {
-        case ..<1: return "ahora"
-        case ..<60: return "hace \(s) s"
-        case ..<3_600: return "hace \(s / 60) min"
-        case ..<86_400: return "hace \(s / 3_600) h"
-        default: return "hace \(s / 86_400) d"
+        case ..<1: return nil
+        case ..<60: return (s, .seconds)
+        case ..<3_600: return (s / 60, .minutes)
+        case ..<86_400: return (s / 3_600, .hours)
+        default: return (s / 86_400, .days)
         }
     }
 }

@@ -105,16 +105,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         store.reload()
         let menu = NSMenu()
-        menu.addItem(NSMenuItem.sectionHeader(title: "Últimas capturas"))
+        menu.addItem(NSMenuItem.sectionHeader(title: String(localized: "Latest screenshots")))
 
         if store.captures.isEmpty {
-            let empty = NSMenuItem(title: "Aún no hay capturas", action: nil, keyEquivalent: "")
+            let empty = NSMenuItem(title: String(localized: "No screenshots yet"), action: nil, keyEquivalent: "")
             empty.isEnabled = false
             menu.addItem(empty)
         }
         for capture in store.captures {
-            let ago = RelativeTime.format(capture.created)
-            let item = NSMenuItem(title: "Captura · \(ago)", action: #selector(menuCopyImage(_:)), keyEquivalent: "")
+            let ago = Texts.ago(capture.created)
+            let item = NSMenuItem(title: String(localized: "Screenshot · \(ago)"), action: #selector(menuCopyImage(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = capture.url
             if let thumb = Thumbnailer.thumbnail(for: capture.url) {
@@ -126,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             menu.addItem(item)
 
-            let alt = NSMenuItem(title: "Copiar ruta · \(ago)", action: #selector(menuCopyPath(_:)), keyEquivalent: "")
+            let alt = NSMenuItem(title: String(localized: "Copy path · \(ago)"), action: #selector(menuCopyPath(_:)), keyEquivalent: "")
             alt.target = self
             alt.representedObject = capture.url
             alt.isAlternate = true
@@ -135,25 +135,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(alt)
         }
         if !store.captures.isEmpty {
-            let hint = NSMenuItem(title: "Clic: copia la imagen · con ⌥: la ruta", action: nil, keyEquivalent: "")
+            let hint = NSMenuItem(title: String(localized: "Click copies the image · with ⌥, the path"), action: nil, keyEquivalent: "")
             hint.isEnabled = false
             menu.addItem(hint)
         }
 
         menu.addItem(.separator())
-        let lastPath = NSMenuItem(title: "Copiar ruta de la última", action: #selector(menuCopyLatestPath), keyEquivalent: "")
+        let lastPath = NSMenuItem(title: String(localized: "Copy path of the latest"), action: #selector(menuCopyLatestPath), keyEquivalent: "")
         lastPath.target = self
         lastPath.isEnabled = !store.captures.isEmpty
         menu.addItem(lastPath)
-        let folder = NSMenuItem(title: "Abrir carpeta de capturas", action: #selector(openFolder), keyEquivalent: "")
+        let folder = NSMenuItem(title: String(localized: "Open screenshots folder"), action: #selector(openFolder), keyEquivalent: "")
         folder.target = self
         menu.addItem(folder)
-        let prefs = NSMenuItem(title: "Ajustes…", action: #selector(openSettings), keyEquivalent: "")
+        let prefs = NSMenuItem(title: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
 
         menu.addItem(.separator())
-        let login = NSMenuItem(title: "Abrir al iniciar sesión", action: #selector(toggleLoginItem), keyEquivalent: "")
+        let login = NSMenuItem(title: String(localized: "Open at login"), action: #selector(toggleLoginItem), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
@@ -181,11 +181,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appItem = NSMenuItem()
         main.addItem(appItem)
         let appMenu = NSMenu(title: "ShotGenie")
-        let prefs = NSMenuItem(title: "Ajustes…", action: #selector(openSettings), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         prefs.target = self
         appMenu.addItem(prefs)
         appMenu.addItem(.separator())
-        appMenu.addItem(NSMenuItem(title: "Salir de ShotGenie", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: String(localized: "Quit ShotGenie"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         appItem.submenu = appMenu
         return main
     }

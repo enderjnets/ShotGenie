@@ -23,6 +23,7 @@ iconutil -c icns "$BUILD/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.ic
 
 cp "$(swift build -c release --show-bin-path)/ShotGenie" "$APP/Contents/MacOS/ShotGenie"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+cp -R Resources/*.lproj "$APP/Contents/Resources/"   # traducciones: macOS elige según el idioma del sistema
 
 IDENTITY=""
 if [ -n "${SIGN_IDENTITY:-}" ]; then
@@ -34,6 +35,9 @@ if [ -n "$IDENTITY" ]; then
 else
   codesign --force --sign - "$APP"
 fi
+
+# NO_INSTALL=1: solo deja la app en .build/app (lo usa scripts/docs/render.sh)
+if [ -n "${NO_INSTALL:-}" ]; then echo "Compilada: $APP"; exit 0; fi
 
 # Cierra la copia en marcha antes de reemplazarla
 osascript -e "tell application id \"$BUNDLE_ID\" to quit" 2>/dev/null || true

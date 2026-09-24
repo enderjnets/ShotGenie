@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>es</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>ShotGenie</string>
 	<key>CFBundleExecutable</key>
@@ -12,6 +12,11 @@
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.enderj.screencapture</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>ShotGenie</string>
 	<key>CFBundlePackageType</key>
