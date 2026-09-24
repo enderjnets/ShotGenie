@@ -33,7 +33,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
         let rows = store.captures.count + 1
-        let placement = FanPlacement.place(mouse: mouse, rows: rows, magnification: Settings.magnification,
+        let iconTop = DockLocator.iconTop(near: mouse)
+        let placement = FanPlacement.place(iconTop: iconTop ?? FanPlacement.anchor(mouse: mouse), rows: rows,
+                                           magnification: Settings.magnification,
                                            screen: screen.frame, visible: screen.visibleFrame)
         let view = FanView(
             store: store,
@@ -64,7 +66,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
 
         panel.setFrameOrigin(placement.origin)
-        DebugLog.note("cursor \(mouse) pantalla \(screen.frame) lupa \(Settings.magnification)→\(m)")
+        DebugLog.note("cursor \(mouse) icono \(iconTop.map { "\($0)" } ?? "desconocido (se usa el cursor)") pantalla \(screen.frame) lupa \(Settings.magnification)→\(m)")
 
         self.panel?.orderOut(nil)
         self.panel = panel

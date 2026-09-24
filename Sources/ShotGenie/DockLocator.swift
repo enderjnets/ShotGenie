@@ -28,6 +28,16 @@ enum DockLocator {
         return nil
     }
 
+    /// Centro horizontal y borde superior del icono, en coordenadas de AppKit, si el Dock lo muestra
+    /// donde está el cursor (tras un clic en el icono). Si no, `nil` y se usa el cursor.
+    static func iconTop(near mouse: CGPoint) -> CGPoint? {
+        guard let item = iconRect(), let primary = NSScreen.screens.first?.frame else { return nil }
+        let top = CGPoint(x: item.midX, y: primary.maxY - item.minY)
+        let bottom = primary.maxY - item.maxY
+        guard abs(top.x - mouse.x) <= max(item.width, 40), mouse.y >= bottom - 20, mouse.y <= top.y + 20 else { return nil }
+        return top
+    }
+
     /// Las pantallas en las mismas coordenadas que `iconRect()`.
     static func screenRectsTopLeft() -> [CGRect] {
         guard let primary = NSScreen.screens.first?.frame else { return [] }

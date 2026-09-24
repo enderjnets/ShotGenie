@@ -100,14 +100,23 @@ public enum PanelPlacement {
     }
 }
 
-/// Dónde abrir el abanico: la columna de miniaturas justo encima del icono (el cursor) y la fila
-/// de abajo pegada a él. Si la imagen ampliada no cabe a la derecha (icono cerca del borde), se
-/// reduce la lupa lo justo en vez de mover el abanico, que dejaría de estar sobre el icono.
+/// Dónde abrir el abanico, como las pilas del Dock: la columna de miniaturas centrada sobre el
+/// icono y la fila de abajo pegada a su borde superior. Si la imagen ampliada no cabe a la derecha
+/// (icono cerca del borde), se reduce la lupa lo justo en vez de mover el abanico.
 public enum FanPlacement {
-    public static func place(mouse: CGPoint, rows: Int, magnification m: CGFloat, screen: CGRect, visible: CGRect)
+    /// Hueco entre el borde superior del icono y la primera miniatura.
+    public static let gap: CGFloat = 10
+
+    /// El ancla cuando no se sabe dónde está el icono: el cursor está sobre él y el Dock puede ampliarlo.
+    public static func anchor(mouse: CGPoint) -> CGPoint {
+        CGPoint(x: mouse.x, y: mouse.y + PanelPlacement.aboveCursor - gap)
+    }
+
+    /// `iconTop`: centro horizontal del icono y su borde superior (coordenadas de AppKit).
+    public static func place(iconTop: CGPoint, rows: Int, magnification m: CGFloat, screen: CGRect, visible: CGRect)
         -> (origin: CGPoint, magnification: CGFloat) {
         let margin = PanelPlacement.margin
-        let left = mouse.x - FanLayout.anchorX
+        let left = iconTop.x - FanLayout.anchorX
         var mag = FanLayout.clampMagnification(m)
         while mag > FanLayout.magnificationRange.lowerBound,
               left + FanLayout.width(rows: rows, magnification: mag) > screen.maxX - margin {
@@ -116,9 +125,9 @@ public enum FanPlacement {
         let w = FanLayout.width(rows: rows, magnification: mag)
         let h = FanLayout.height(rows: rows, magnification: mag)
         let x = min(max(left, screen.minX + margin), screen.maxX - w - margin)
-        // La fila de abajo empieza `aboveCursor` sobre el cursor; el hueco para ampliarla queda
-        // por debajo y puede pasar por encima del Dock (el panel está por encima de él).
-        var y = mouse.y + PanelPlacement.aboveCursor - FanLayout.overflow(magnification: mag)
+        // La fila de abajo empieza `gap` sobre el icono; el hueco para ampliarla queda por debajo
+        // y puede pasar por encima del Dock (el panel está por encima de él).
+        var y = iconTop.y + gap - FanLayout.overflow(magnification: mag)
         y = min(y, visible.maxY - h)
         return (CGPoint(x: x, y: y), mag)
     }
