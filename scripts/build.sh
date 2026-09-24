@@ -1,0 +1,44 @@
+#!/bin/bash
+# Compila ShotGenie y la instala en ~/Applications/ShotGenie.app.
+#
+# Firma: con SIGN_IDENTITY (nombre de un certificado de firma de código del llavero) la firma es
+# estable y macOS conserva el permiso de Accesibilidad entre compilaciones. Sin él, firma ad hoc
+# y el permiso hay que volver a darlo tras cada compilación. Se puede fijar en scripts/local.env.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -f scripts/local.env ] && source scripts/local.env
+
+BUILD=.build/app
+APP="$BUILD/ShotGenie.app"
+DEST="$HOME/Applications/ShotGenie.app"
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Resources/Info.plist)
+
+swift build -c release
+rm -rf "$BUILD" && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
+# Icono de la app desde el SVG
+swiftc -O scripts/make-icon/main.swift -o "$BUILD/make-icon"
+"$BUILD/make-icon" Resources/AppIcon.svg "$BUILD/AppIcon.iconset"
+iconutil -c icns "$BUILD/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
+
+cp "$(swift build -c release --show-bin-path)/ShotGenie" "$APP/Contents/MacOS/ShotGenie"
+cp Resources/Info.plist "$APP/Contents/Info.plist"
+
+IDENTITY=""
+if [ -n "${SIGN_IDENTITY:-}" ]; then
+  IDENTITY=$(security find-identity -p codesigning 2>/dev/null | awk -v n="\"$SIGN_IDENTITY\"" 'index($0, n) {print $2; exit}')
+  [ -z "$IDENTITY" ] && echo "Aviso: no encuentro el certificado «$SIGN_IDENTITY»; firma ad hoc"
+fi
+if [ -n "$IDENTITY" ]; then
+  codesign --force --sign "$IDENTITY" "$APP"
+else
+  codesign --force --sign - "$APP"
+fi
+
+# Cierra la copia en marcha antes de reemplazarla
+osascript -e "tell application id \"$BUNDLE_ID\" to quit" 2>/dev/null || true
+sleep 1
+mkdir -p "$HOME/Applications"
+rm -rf "$DEST"
+cp -R "$APP" "$DEST"
+echo "Instalada: $DEST"
