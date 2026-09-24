@@ -55,6 +55,8 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.contentView = host
         panel.delegate = self
         panel.onEscape = { [weak self] in self?.close(returnFocus: true) }
+        // En todos los escritorios y encima de las apps a pantalla completa, como el menú del Dock.
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
 
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
@@ -65,6 +67,11 @@ final class PanelController: NSObject, NSWindowDelegate {
 
         self.panel?.orderOut(nil)
         self.panel = panel
+        // Que el Dock no se esconda mientras se elige (si no, el abanico queda colgando).
+        DockAutoHide.suspend()
+        // Primero la ventana y luego activar: así macOS no salta a otro escritorio donde haya
+        // otra ventana de la app (Ajustes) y el abanico se ve en la pantalla actual.
+        panel.orderFrontRegardless()
         NSApp.activate()
         panel.makeKeyAndOrderFront(nil)
         writeDebugSnapshot(of: host)
@@ -85,6 +92,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.delegate = nil
         panel.orderOut(nil)
         self.panel = nil
+        DockAutoHide.resume()
         if shouldReturn { returnFocus?() }
     }
 

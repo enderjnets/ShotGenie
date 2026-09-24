@@ -15,7 +15,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// La última app activa que no es esta: a ella se devuelve el foco tras copiar.
     private var lastOtherApp: NSRunningApplication?
 
+    func applicationWillTerminate(_ notification: Notification) {
+        DockAutoHide.resume()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        DockAutoHide.resume()   // por si la app se cerró de golpe con el abanico abierto
         // Solo depuración: `defaults write com.enderj.screencapture debugStatusPath /ruta.txt`.
         if let path = UserDefaults.standard.string(forKey: "debugStatusPath") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
