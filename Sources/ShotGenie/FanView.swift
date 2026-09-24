@@ -16,10 +16,16 @@ struct FanView: View {
     private let magnification: CGFloat
     /// La imagen ampliada crece hacia la izquierda (el icono está cerca del borde derecho).
     private let growsLeft: Bool
+    /// Solo para la demo del README: ampliación de cada fila en este fotograma (la animación real
+    /// la hace SwiftUI con el cursor).
+    private let rowScales: [CGFloat]?
 
     init(store: CaptureStore, onCopy: @escaping (Capture, CopyKind) -> Void, onOpenFolder: @escaping () -> Void,
-         onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification, growsLeft: Bool = false) {
+         onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification, growsLeft: Bool = false,
+         rowScales: [CGFloat]? = nil, initialCopied: URL? = nil) {
         self.store = store
+        self.rowScales = rowScales
+        _copied = State(initialValue: initialCopied.map { ($0, CopyKind.image) })
         self.magnification = magnification
         self.growsLeft = growsLeft
         self.onCopy = onCopy
@@ -95,7 +101,7 @@ struct FanView: View {
 
             // La ampliación cambia el tamaño real (no un scaleEffect), para que el clic
             // funcione en toda la imagen ampliada y no solo en su hueco original.
-            let scale = active ? magnification : 1
+            let scale = rowScales.map { k < $0.count ? $0[k] : 1 } ?? (active ? magnification : 1)
             Button { copy(capture, .image) } label: {
                 thumbnail(capture)
                     .frame(width: FanLayout.thumb.width * scale, height: FanLayout.thumb.height * scale)

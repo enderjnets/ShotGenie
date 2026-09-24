@@ -30,7 +30,7 @@ enum DocsRenderer {
         let m = Settings.magnification
         let fan = CGSize(width: FanLayout.width(rows: rows, magnification: m), height: FanLayout.height(rows: rows, magnification: m))
         let dock = DockLayout(width: scene.width, height: max(scene.height, fan.height + 140))
-        let fanOrigin = CGPoint(x: dock.targetCenter.x - FanLayout.anchorX, y: dock.barY - 6 - fan.height)
+        let fanOrigin = fanTopLeft(dock: dock, fan: fan, magnification: m)
         // Recorte: el abanico y el Dock, con margen.
         let crop = CGRect(x: min(fanOrigin.x, dock.barX) - 40, y: fanOrigin.y - 30, width: 0, height: 0)
         let cropSize = CGSize(width: max(fanOrigin.x + fan.width, dock.barX + dock.barWidth) + 40 - crop.minX,
@@ -44,12 +44,6 @@ enum DocsRenderer {
         .frame(width: cropSize.width, height: cropSize.height, alignment: .topLeading)
         .clipped(), scale: 1.25, to: output.appendingPathComponent("fan.png"))
 
-        // 2b. Abanico con la imagen creciendo a la izquierda (icono cerca del borde derecho); no va al README
-        save(FanView(store: store, onCopy: { _, _ in }, onOpenFolder: {}, onDismiss: {}, initialHover: 1, growsLeft: true)
-                .frame(width: fan.width, height: fan.height)
-                .background(Color(white: 0.3)),
-             scale: 1, to: output.appendingPathComponent("fan-left.png"))
-
         // 3. Fotogramas del genio (la captura más nueva entra en el icono)
         guard let image = Thumbnailer.thumbnail(for: newest.url, maxPixel: 1200),
               let pixels = Thumbnailer.pixelSize(of: newest.url) else { return }
@@ -61,21 +55,83 @@ enum DocsRenderer {
         try? FileManager.default.removeItem(at: frames)
         try? FileManager.default.createDirectory(at: frames, withIntermediateDirectories: true)
         let fps = 20.0
-        let genieCount = Int(Genie.duration * fps)
         var n = 0
-        func frame(_ icon: NSImage, progress: Double?) {
-            let view = Desktop(dock: desk, icon: icon) {
-                if let progress {
-                    GenieFrame(image: image, rect: rect, target: target, progress: progress)
+
+        // Demo completa: genio → clic en el icono → abanico → lupa siguiendo al cursor → copiar.
+        let deskFan = fanTopLeft(dock: desk, fan: fan, magnification: m)
+        let iconC = desk.targetCenter
+        func thumbCenter(_ k: Int) -> CGPoint {
+            CGPoint(x: deskFan.x + FanLayout.anchorX + FanLayout.placement(row: k).dx,
+                    y: deskFan.y + FanLayout.centerY(row: k, height: fan.height, magnification: m))
+        }
+        var scales = [CGFloat](repeating: 1, count: caps.count)
+        var hovered: Int?
+
+        func frame(_ icon: NSImage, genie: Double? = nil, fanOpen: Bool = false, cursor: CGPoint? = nil,
+                   pressed: Bool = false, copied: URL? = nil) {
+            // La lupa se acerca a su tamaño poco a poco, como el muelle de la app.
+            for k in scales.indices {
+                let goal: CGFloat = fanOpen && hovered == k ? m : 1
+                scales[k] += (goal - scales[k]) * 0.5
+            }
+            let view = Desktop(dock: desk, icon: icon, pressed: pressed) {
+                if let genie {
+                    GenieFrame(image: image, rect: rect, target: target, progress: genie)
                         .frame(width: scene.width, height: scene.height)
                 }
+                if fanOpen {
+                    FanView(store: store, onCopy: { _, _ in }, onOpenFolder: {}, onDismiss: {},
+                            initialHover: hovered, magnification: m, rowScales: scales, initialCopied: copied)
+                        .frame(width: fan.width, height: fan.height)
+                        .offset(x: deskFan.x, y: deskFan.y)
+                }
+                if let cursor { Cursor().offset(x: cursor.x, y: cursor.y) }
             }
-            save(view, scale: 0.75, to: frames.appendingPathComponent(String(format: "%03d.png", n)))
+            // Recorte sin el escritorio vacío de los lados, para que el abanico se lea en el README.
+            let crop = CGRect(x: 230, y: 110, width: 940, height: scene.height - 110)
+            save(view.offset(x: -crop.minX, y: -crop.minY)
+                     .frame(width: crop.width, height: crop.height, alignment: .topLeading)
+                     .clipped(),
+                 scale: 0.85, to: frames.appendingPathComponent(String(format: "%03d.png", n)))
             n += 1
         }
-        for _ in 0..<8 { frame(iconOld, progress: nil) }
-        for i in 0...genieCount { frame(iconOld, progress: Double(i) / Double(genieCount)) }
-        for _ in 0..<24 { frame(iconNew, progress: nil) }
+        func ease(_ t: Double) -> CGFloat { CGFloat(t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2) }
+        func move(from a: CGPoint, to b: CGPoint, frames count: Int, icon: NSImage, fanOpen: Bool) {
+            for i in 1...count {
+                let t = ease(Double(i) / Double(count))
+                let p = CGPoint(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t)
+                if fanOpen {
+                    hovered = FanLayout.index(forY: p.y - deskFan.y, height: fan.height, count: caps.count, magnification: m)
+                }
+                frame(icon, fanOpen: fanOpen, cursor: p)
+            }
+        }
+
+        // 1. La captura entra en el icono.
+        for _ in 0..<6 { frame(iconOld) }
+        let genieCount = Int(Genie.duration * fps)
+        for i in 0...genieCount { frame(iconOld, genie: Double(i) / Double(genieCount)) }
+        for _ in 0..<10 { frame(iconNew) }
+        // 2. El cursor va al icono y hace clic.
+        let start = CGPoint(x: scene.width * 0.3, y: scene.height * 0.45)
+        move(from: start, to: iconC, frames: 16, icon: iconNew, fanOpen: false)
+        for _ in 0..<3 { frame(iconNew, cursor: iconC, pressed: true) }
+        // 3. Sale el abanico y el cursor sube por las capturas; la lupa sigue al cursor.
+        for _ in 0..<6 { frame(iconNew, fanOpen: true, cursor: iconC) }
+        var at = iconC
+        for k in 0..<min(3, caps.count) {
+            let target = thumbCenter(k)
+            move(from: at, to: target, frames: 8, icon: iconNew, fanOpen: true)
+            for _ in 0..<12 { frame(iconNew, fanOpen: true, cursor: target) }
+            at = target
+        }
+        // 4. Clic en la ampliada: se copia, el icono se pone verde y el abanico se cierra.
+        let chosen = caps[min(2, caps.count - 1)].url
+        for _ in 0..<14 { frame(iconCopied, fanOpen: true, cursor: at, copied: chosen) }
+        hovered = nil
+        for _ in 0..<24 { frame(iconCopied, cursor: at) }
+        for _ in 0..<10 { frame(iconNew, cursor: at) }
+
         // 4. Ajustes (vista real de la app, en una ventana que no se muestra)
         let host = NSHostingView(rootView: SettingsView(store: store).background(Color(nsColor: .windowBackgroundColor)))
         host.appearance = NSAppearance(named: .darkAqua)
@@ -85,7 +141,15 @@ enum DocsRenderer {
             host.cacheDisplay(in: host.bounds, to: rep)
             try? rep.representation(using: .png, properties: [:])?.write(to: output.appendingPathComponent("settings.png"))
         }
-        print("imágenes en \(output.path) (\(n) fotogramas del genio)")
+        print("imágenes en \(output.path) (\(n) fotogramas de la demo)")
+    }
+
+    /// Esquina superior izquierda del abanico en la escena (y hacia abajo), como lo coloca la app:
+    /// miniaturas centradas en el icono y la fila de abajo `FanPlacement.gap` sobre él.
+    private static func fanTopLeft(dock: DockLayout, fan: CGSize, magnification m: CGFloat) -> CGPoint {
+        let iconTop = dock.targetCenter.y - DockLayout.tile / 2
+        let bottom = iconTop - FanPlacement.gap + FanLayout.overflow(magnification: m)
+        return CGPoint(x: dock.targetCenter.x - FanLayout.anchorX, y: bottom - fan.height)
     }
 
     private static func save(_ view: some View, scale: CGFloat, to url: URL) {
@@ -115,6 +179,7 @@ struct DockLayout {
 private struct Desktop<Overlay: View>: View {
     let dock: DockLayout
     let icon: NSImage
+    var pressed = false
     @ViewBuilder let overlay: () -> Overlay
 
     static var apps: [(String, Color)] {
@@ -139,7 +204,7 @@ private struct Desktop<Overlay: View>: View {
                 let c = dock.center(i)
                 Group {
                     if i == DockLayout.target {
-                        Crisp(image: icon, side: DockLayout.tile)
+                        Crisp(image: icon, side: DockLayout.tile).brightness(pressed ? -0.3 : 0)
                     } else {
                         RoundedRectangle(cornerRadius: 11)
                             .fill(Self.apps[i].1.gradient)
@@ -184,5 +249,24 @@ private struct Crisp: View {
         } else {
             Image(nsImage: image).resizable().frame(width: side, height: side)
         }
+    }
+}
+
+/// La flecha del cursor de macOS (negra con borde blanco); su punta está en (0, 0).
+private struct Cursor: View {
+    var body: some View {
+        let arrow = Path { p in
+            p.move(to: .zero)
+            p.addLine(to: CGPoint(x: 0, y: 22)); p.addLine(to: CGPoint(x: 5.5, y: 17))
+            p.addLine(to: CGPoint(x: 9, y: 25)); p.addLine(to: CGPoint(x: 12.5, y: 23.5))
+            p.addLine(to: CGPoint(x: 9, y: 16)); p.addLine(to: CGPoint(x: 16, y: 16))
+            p.closeSubpath()
+        }
+        ZStack(alignment: .topLeading) {
+            arrow.fill(.black)
+            arrow.stroke(.white, style: StrokeStyle(lineWidth: 1.6, lineJoin: .round))
+        }
+        .frame(width: 18, height: 27, alignment: .topLeading)
+        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
     }
 }
