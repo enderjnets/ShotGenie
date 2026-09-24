@@ -6,9 +6,9 @@ A macOS Dock app for your latest screenshots. Take a screenshot with ⌘⇧4 as 
 
 It was built to stop hunting through Finder for the screenshot you just took so you can paste it into Claude Code.
 
-<p align="center"><img src="docs/genie.gif" width="720" alt="A screenshot genies into the ShotGenie icon; a click on the icon opens the fan, the magnifier follows the cursor, and a click copies the image"></p>
+<p align="center"><img src="docs/genie.gif" width="720" alt="⌘⇧4 over a window, the screenshot genies into the ShotGenie icon; a click on the icon opens the fan, the magnifier follows the cursor, and a click copies the image"></p>
 
-<p align="center"><sub>The screenshot genies into the icon → click the icon → the fan opens and the magnifier follows the cursor → click to copy the image.</sub></p>
+<p align="center"><sub>⌘⇧4 over a window → the screenshot genies into the icon → click the icon → the fan opens and the magnifier follows the cursor → click to copy the image.</sub></p>
 
 ## What it does
 

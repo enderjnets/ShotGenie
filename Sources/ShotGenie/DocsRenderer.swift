@@ -57,7 +57,7 @@ enum DocsRenderer {
         let fps = 20.0
         var n = 0
 
-        // Demo completa: genio → clic en el icono → abanico → lupa siguiendo al cursor → copiar.
+        // Demo completa: ⌘⇧4 sobre una ventana → genio → clic en el icono → abanico → lupa → copiar.
         let deskFan = fanTopLeft(dock: desk, fan: fan, magnification: m)
         let iconC = desk.targetCenter
         func thumbCenter(_ k: Int) -> CGPoint {
@@ -66,15 +66,26 @@ enum DocsRenderer {
         }
         var scales = [CGFloat](repeating: 1, count: caps.count)
         var hovered: Int?
+        // La ventana que se captura: la página de la captura más nueva, con su proporción.
+        let content = CGRect(x: 270, y: 204, width: 600, height: 600 * pixels.height / pixels.width)
 
         func frame(_ icon: NSImage, genie: Double? = nil, fanOpen: Bool = false, cursor: CGPoint? = nil,
-                   pressed: Bool = false, copied: URL? = nil) {
+                   pressed: Bool = false, copied: URL? = nil,
+                   crosshair: CGPoint? = nil, selection: CGRect? = nil, keys: Bool = false) {
             // La lupa se acerca a su tamaño poco a poco, como el muelle de la app.
             for k in scales.indices {
                 let goal: CGFloat = fanOpen && hovered == k ? m : 1
                 scales[k] += (goal - scales[k]) * 0.5
             }
             let view = Desktop(dock: desk, icon: icon, pressed: pressed) {
+                AppWindow(image: image, content: content)
+                if let selection {
+                    Rectangle().fill(Color.white.opacity(0.22))
+                        .overlay(Rectangle().stroke(Color(white: 0.35).opacity(0.7), lineWidth: 1))
+                        .frame(width: selection.width, height: selection.height)
+                        .offset(x: selection.minX, y: selection.minY)
+                }
+                if keys { KeyCaps().frame(width: scene.width).offset(y: 128) }
                 if let genie {
                     GenieFrame(image: image, rect: rect, target: target, progress: genie)
                         .frame(width: scene.width, height: scene.height)
@@ -84,6 +95,12 @@ enum DocsRenderer {
                             initialHover: hovered, magnification: m, rowScales: scales, initialCopied: copied)
                         .frame(width: fan.width, height: fan.height)
                         .offset(x: deskFan.x, y: deskFan.y)
+                }
+                if let crosshair {
+                    // Como macOS: al arrastrar, junto a la cruz van el ancho y el alto en píxeles de la captura.
+                    let w = Int(((selection?.width ?? 0) / content.width * pixels.width / 2).rounded())
+                    let h = Int(((selection?.height ?? 0) / content.height * pixels.height / 2).rounded())
+                    Crosshair(label: selection == nil ? nil : "\(w)\n\(h)").offset(x: crosshair.x, y: crosshair.y)
                 }
                 if let cursor { Cursor().offset(x: cursor.x, y: cursor.y) }
             }
@@ -107,16 +124,32 @@ enum DocsRenderer {
             }
         }
 
-        // 1. La captura entra en el icono.
-        for _ in 0..<6 { frame(iconOld) }
+        // 1. ⌘⇧4: el cursor se vuelve una cruz y arrastra sobre la ventana.
+        let corner = CGPoint(x: content.minX, y: content.minY)
+        let end = CGPoint(x: content.maxX, y: content.maxY)
+        let begin = CGPoint(x: 820, y: 640)
+        for _ in 0..<8 { frame(iconOld, cursor: begin) }
+        move(from: begin, to: CGPoint(x: corner.x + 30, y: corner.y + 24), frames: 12, icon: iconOld, fanOpen: false)
+        for _ in 0..<5 { frame(iconOld, cursor: CGPoint(x: corner.x + 30, y: corner.y + 24), keys: true) }
+        for i in 1...6 {
+            let t = ease(Double(i) / 6)
+            frame(iconOld, crosshair: CGPoint(x: corner.x + 30 * (1 - t), y: corner.y + 24 * (1 - t)), keys: true)
+        }
+        for i in 1...24 {
+            let t = ease(Double(i) / 24)
+            let p = CGPoint(x: corner.x + (end.x - corner.x) * t, y: corner.y + (end.y - corner.y) * t)
+            frame(iconOld, crosshair: p, selection: CGRect(x: corner.x, y: corner.y, width: p.x - corner.x, height: p.y - corner.y),
+                  keys: i < 10)
+        }
+        for _ in 0..<6 { frame(iconOld, crosshair: end, selection: CGRect(origin: corner, size: content.size)) }
+        // 2. Al soltar, la captura entra en el icono.
         let genieCount = Int(Genie.duration * fps)
-        for i in 0...genieCount { frame(iconOld, genie: Double(i) / Double(genieCount)) }
-        for _ in 0..<10 { frame(iconNew) }
-        // 2. El cursor va al icono y hace clic.
-        let start = CGPoint(x: scene.width * 0.3, y: scene.height * 0.45)
-        move(from: start, to: iconC, frames: 16, icon: iconNew, fanOpen: false)
+        for i in 0...genieCount { frame(iconOld, genie: Double(i) / Double(genieCount), cursor: end) }
+        for _ in 0..<10 { frame(iconNew, cursor: end) }
+        // 3. El cursor va al icono y hace clic.
+        move(from: end, to: iconC, frames: 16, icon: iconNew, fanOpen: false)
         for _ in 0..<3 { frame(iconNew, cursor: iconC, pressed: true) }
-        // 3. Sale el abanico y el cursor sube por las capturas; la lupa sigue al cursor.
+        // 4. Sale el abanico y el cursor sube por las capturas; la lupa sigue al cursor.
         for _ in 0..<6 { frame(iconNew, fanOpen: true, cursor: iconC) }
         var at = iconC
         for k in 0..<min(3, caps.count) {
@@ -125,14 +158,14 @@ enum DocsRenderer {
             for _ in 0..<12 { frame(iconNew, fanOpen: true, cursor: target) }
             at = target
         }
-        // 4. Clic en la ampliada: se copia, el icono se pone verde y el abanico se cierra.
+        // 5. Clic en la ampliada: se copia, el icono se pone verde y el abanico se cierra.
         let chosen = caps[min(2, caps.count - 1)].url
         for _ in 0..<14 { frame(iconCopied, fanOpen: true, cursor: at, copied: chosen) }
         hovered = nil
         for _ in 0..<24 { frame(iconCopied, cursor: at) }
         for _ in 0..<10 { frame(iconNew, cursor: at) }
 
-        // 4. Ajustes (vista real de la app, en una ventana que no se muestra)
+        // 6. Ajustes (vista real de la app, en una ventana que no se muestra)
         let host = NSHostingView(rootView: SettingsView(store: store).background(Color(nsColor: .windowBackgroundColor)))
         host.appearance = NSAppearance(named: .darkAqua)
         host.frame = CGRect(origin: .zero, size: host.fittingSize)
@@ -249,6 +282,73 @@ private struct Crisp: View {
         } else {
             Image(nsImage: image).resizable().frame(width: side, height: side)
         }
+    }
+}
+
+/// Una ventana de ejemplo (barra de título con los tres botones) que muestra la página capturada.
+private struct AppWindow: View {
+    let image: NSImage
+    let content: CGRect
+    static let titleBar: CGFloat = 28
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                ForEach([Color(red: 1, green: 0.37, blue: 0.34), Color(red: 1, green: 0.74, blue: 0.18),
+                         Color(red: 0.16, green: 0.78, blue: 0.25)], id: \.self) { c in
+                    Circle().fill(c).frame(width: 12, height: 12)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .frame(width: content.width, height: Self.titleBar)
+            .background(Color(white: 0.93))
+            Image(nsImage: image).resizable().interpolation(.high)
+                .frame(width: content.width, height: content.height)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.35), radius: 22, y: 12)
+        .offset(x: content.minX, y: content.minY - Self.titleBar)
+    }
+}
+
+/// La cruz de ⌘⇧4 (centro en (0, 0)) con el tamaño de la selección al lado.
+private struct Crosshair: View {
+    let label: String?
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            let cross = Path { p in
+                p.move(to: CGPoint(x: -14, y: 0)); p.addLine(to: CGPoint(x: 14, y: 0))
+                p.move(to: CGPoint(x: 0, y: -14)); p.addLine(to: CGPoint(x: 0, y: 14))
+            }
+            cross.stroke(.white, lineWidth: 3.2)
+            cross.stroke(.black, lineWidth: 1.2)
+            if let label {
+                Text(label)
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.black)
+                    .shadow(color: .white, radius: 0.8)
+                    .shadow(color: .white, radius: 0.8)
+                    .fixedSize()
+                    .offset(x: 10, y: 8)
+            }
+        }
+        .frame(width: 0, height: 0, alignment: .topLeading)
+    }
+}
+
+/// Las teclas pulsadas, para que se entienda de dónde sale la cruz.
+private struct KeyCaps: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(["⌘", "⇧", "4"], id: \.self) { k in
+                Text(k).font(.system(size: 20, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.25), lineWidth: 1))
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
