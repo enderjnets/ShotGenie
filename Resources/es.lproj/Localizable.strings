@@ -21,6 +21,7 @@
 
 /* Abanico */
 "Path" = "Ruta";
+"Edit in Preview" = "Editar en Vista Previa";
 "Copy image of the screenshot from %@" = "Copiar imagen de la captura de %@";
 "%@ more in Finder" = "%@ más en Finder";
 "Open in Finder" = "Abrir en Finder";

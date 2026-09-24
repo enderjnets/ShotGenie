@@ -413,3 +413,53 @@ import Testing
         #expect(d.path == "/Users/ana/Applications/ShotGenie.app")
     }
 }
+
+@Suite struct KeepsHoverTests {
+    let m: CGFloat = 4.2
+    let rows = 6
+    var height: CGFloat { FanLayout.height(rows: rows, magnification: m) }
+
+    /// Punto a (u, v) del centro de la columna de la fila `k`, girado como la dibuja FanView.
+    func point(row k: Int, u: CGFloat, v: CGFloat, growsLeft: Bool = false) -> CGPoint {
+        let place = FanLayout.placement(row: k)
+        let rowWidth = FanLayout.labelWidth + FanLayout.gap + FanLayout.thumb.width
+        let px = FanLayout.padding + (growsLeft ? FanLayout.growth(magnification: m) : 0) + place.dx + rowWidth - FanLayout.thumb.width / 2
+        let py = FanLayout.centerY(row: k, height: height, magnification: m)
+        let a = place.degrees * .pi / 180
+        return CGPoint(x: px + u * cos(a) - v * sin(a), y: py + u * sin(a) + v * cos(a))
+    }
+
+    @Test func pencilCornerKeepsTheRowThoughTheBandsSayOther() {
+        let w = FanLayout.thumb.width * m, h = FanLayout.thumb.height * m
+        for k in 0..<5 {
+            // Esquina de arriba de la imagen ampliada, lejos de la columna: ahí va el lápiz.
+            let corner = point(row: k, u: -FanLayout.thumb.width / 2 + w - 6, v: -h / 2 + 6)
+            // (En la fila de arriba el giro la devuelve a su franja; en las demás las franjas dicen otra.)
+            if k < 4 { #expect(FanLayout.index(forY: corner.y, height: height, count: 5, magnification: m) != k) }
+            #expect(FanLayout.keepsHover(corner, row: k, height: height, magnification: m, growsLeft: false))
+            // El lápiz sobresale un poco de la esquina.
+            let out = point(row: k, u: -FanLayout.thumb.width / 2 + w + 8, v: -h / 2 - 10)
+            #expect(FanLayout.keepsHover(out, row: k, height: height, magnification: m, growsLeft: false))
+        }
+    }
+
+    @Test func overTheColumnTheBandsRule() {
+        let h = FanLayout.thumb.height * m
+        let p = point(row: 2, u: 0, v: -h / 2 + 4)
+        #expect(!FanLayout.keepsHover(p, row: 2, height: height, magnification: m, growsLeft: false))
+    }
+
+    @Test func outsideTheImageDoesNotKeep() {
+        let w = FanLayout.thumb.width * m, h = FanLayout.thumb.height * m
+        #expect(!FanLayout.keepsHover(point(row: 1, u: w, v: 0), row: 1, height: height, magnification: m, growsLeft: false))
+        #expect(!FanLayout.keepsHover(point(row: 1, u: w / 2, v: -h / 2 - 40), row: 1, height: height, magnification: m, growsLeft: false))
+    }
+
+    @Test func growingLeftMirrors() {
+        let w = FanLayout.thumb.width * m, h = FanLayout.thumb.height * m
+        let corner = point(row: 3, u: FanLayout.thumb.width / 2 - w + 6, v: -h / 2 + 6, growsLeft: true)
+        #expect(FanLayout.keepsHover(corner, row: 3, height: height, magnification: m, growsLeft: true))
+        let wrongSide = point(row: 3, u: FanLayout.thumb.width / 2 + 60, v: 0, growsLeft: true)
+        #expect(!FanLayout.keepsHover(wrongSide, row: 3, height: height, magnification: m, growsLeft: true))
+    }
+}

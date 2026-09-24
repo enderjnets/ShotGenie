@@ -202,6 +202,29 @@ public enum FanLayout {
         if k >= count { return nil }
         return max(k, 0)
     }
+
+    /// Margen alrededor de la miniatura ampliada que sigue contando como «encima» (el lápiz sobresale).
+    public static let keepMargin: CGFloat = 18
+
+    /// Si `p` (SwiftUI, `y` hacia abajo) está sobre la parte de la miniatura ampliada de la fila `k`
+    /// que sobresale de la columna. Ahí la fila no cambia aunque las franjas digan otra: la imagen
+    /// ampliada mide varias franjas y el lápiz de editar está en su esquina de arriba.
+    /// Encima de la columna mandan las franjas, para poder recorrer las filas.
+    public static func keepsHover(_ p: CGPoint, row k: Int, height: CGFloat,
+                                  magnification m: CGFloat = defaultMagnification, growsLeft: Bool) -> Bool {
+        let place = placement(row: k)
+        let rowWidth = labelWidth + gap + thumb.width
+        let pivot = CGPoint(x: padding + (growsLeft ? growth(magnification: m) : 0) + place.dx + rowWidth - thumb.width / 2,
+                            y: centerY(row: k, height: height, magnification: m))
+        // Deshace el giro de la fila (horario con `y` hacia abajo) alrededor de su pivote.
+        let a = place.degrees * .pi / 180
+        let dx = p.x - pivot.x, dy = p.y - pivot.y
+        let u = dx * cos(a) + dy * sin(a), v = -dx * sin(a) + dy * cos(a)
+        let w = thumb.width * m, h = thumb.height * m
+        guard abs(v) <= h / 2 + keepMargin else { return false }
+        let far = growsLeft ? -u : u  // distancia hacia el lado en que crece la miniatura
+        return far > thumb.width / 2 && far <= w - thumb.width / 2 + keepMargin
+    }
 }
 
 /// Efecto genio al capturar: la imagen, en grande, se estrecha en un embudo y cae en el icono.

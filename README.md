@@ -16,12 +16,13 @@ It was built to stop hunting through Finder for the screenshot you just took so 
 - **Genie effect.** When a screenshot lands, it appears large on the screen where you took it and genies into the app's real Dock position, in whatever direction the Dock is from that screen (multi-display aware).
 - **Fan with magnifier.** Left-click the icon: the last 5 screenshots fan out; the one under the cursor is magnified (×1.5–×6, set in Settings, ⌘,).
 - **Copy image or path.** Click a screenshot to copy the image itself (PNG + TIFF, no file URL, so terminals paste the image and not the path). The "Ruta" pill copies the path, escaped with backslashes like a Finder drag into Terminal.
+- **Edit in Preview.** The magnified screenshot has a pencil in its corner (or ⌘-click it): it opens in Preview with the Markup toolbar already showing, ready to draw, crop or add text. ShotGenie turns on Preview's own "show Markup toolbar" setting if it was off.
 - **Dock menu.** Right-click the icon for a text menu with the last 5 screenshots; each item also has a ⌥ alternate that copies the path, plus "copy path of the latest" and "open screenshots folder". The Dock does not draw images in its menus, so this one is text only.
 - **Focus goes back.** After copying, the app you were using becomes active again, so ⌘V goes straight to it.
 
 ## Screenshots
 
-**Click the Dock icon: the fan.** The screenshot under the cursor is magnified; click it to copy the image, or click "Path" to copy its path.
+**Click the Dock icon: the fan.** The screenshot under the cursor is magnified; click it to copy the image, or click "Path" to copy its path. The pencil in the corner of the magnified screenshot opens it in Preview, ready to edit.
 
 <p align="center"><img src="docs/fan.png" width="560" alt="Fan of the last five screenshots above the Dock, one magnified"></p>
 
@@ -110,7 +111,7 @@ Checked in September 2026. Each covers part of this; none of the ones found comb
 
 ## En español
 
-ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal. Descárgala como DMG desde Releases (doble clic en «Install ShotGenie») o compílala con `scripts/build.sh`. La interfaz sale en español si tu macOS está en español.
+ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal; el lápiz de la esquina la abre en Vista Previa con la edición ya lista. Descárgala como DMG desde Releases (doble clic en «Install ShotGenie») o compílala con `scripts/build.sh`. La interfaz sale en español si tu macOS está en español.
 
 ## License
 

@@ -10,6 +10,7 @@ struct FanView: View {
     let onCopy: (Capture, CopyKind) -> Void
     let onOpenFolder: () -> Void
     let onDismiss: () -> Void
+    let onEdit: (Capture) -> Void
 
     @State private var hovered: Int?
     /// Lo que se amplía la miniatura bajo el cursor (Ajustes).
@@ -22,7 +23,7 @@ struct FanView: View {
 
     init(store: CaptureStore, onCopy: @escaping (Capture, CopyKind) -> Void, onOpenFolder: @escaping () -> Void,
          onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification, growsLeft: Bool = false,
-         rowScales: [CGFloat]? = nil, initialCopied: URL? = nil) {
+         rowScales: [CGFloat]? = nil, initialCopied: URL? = nil, onEdit: @escaping (Capture) -> Void = { _ in }) {
         self.store = store
         self.rowScales = rowScales
         _copied = State(initialValue: initialCopied.map { ($0, CopyKind.image) })
@@ -31,6 +32,7 @@ struct FanView: View {
         self.onCopy = onCopy
         self.onOpenFolder = onOpenFolder
         self.onDismiss = onDismiss
+        self.onEdit = onEdit
         _hovered = State(initialValue: initialHover)
     }
     @State private var copied: (url: URL, kind: CopyKind)?
@@ -60,7 +62,14 @@ struct FanView: View {
         .onContinuousHover { phase in
             let next: Int?
             switch phase {
-            case .active(let p): next = FanLayout.index(forY: p.y, height: size.height, count: caps.count, magnification: magnification)
+            case .active(let p):
+                // Sobre la miniatura ampliada (camino del lápiz) la fila no cambia.
+                if let h = hovered, h < caps.count,
+                   FanLayout.keepsHover(p, row: h, height: size.height, magnification: magnification, growsLeft: growsLeft) {
+                    next = h
+                } else {
+                    next = FanLayout.index(forY: p.y, height: size.height, count: caps.count, magnification: magnification)
+                }
             case .ended: next = nil
             }
             if next != hovered {
@@ -102,15 +111,50 @@ struct FanView: View {
             // La ampliación cambia el tamaño real (no un scaleEffect), para que el clic
             // funcione en toda la imagen ampliada y no solo en su hueco original.
             let scale = rowScales.map { k < $0.count ? $0[k] : 1 } ?? (active ? magnification : 1)
-            Button { copy(capture, .image) } label: {
+            let box = CGSize(width: FanLayout.thumb.width * scale, height: FanLayout.thumb.height * scale)
+            Button {
+                // ⌘-clic: atajo de «editar».
+                if NSEvent.modifierFlags.contains(.command) { onEdit(capture) } else { copy(capture, .image) }
+            } label: {
                 thumbnail(capture)
-                    .frame(width: FanLayout.thumb.width * scale, height: FanLayout.thumb.height * scale)
+                    .frame(width: box.width, height: box.height)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .overlay {
+                if active { editBadge(capture, box: box) }
+            }
             .frame(width: FanLayout.thumb.width, height: FanLayout.thumb.height, alignment: growsLeft ? .trailing : .leading)
             .accessibilityLabel(String(localized: "Copy image of the screenshot from \(Texts.ago(capture.created))"))
         }
+    }
+
+    /// Lápiz en la esquina de arriba de la imagen ampliada, del lado hacia el que crece
+    /// (lejos de la columna, donde `keepsHover` mantiene la fila).
+    private func editBadge(_ capture: Capture, box: CGSize) -> some View {
+        let fitted = Self.fitted(Thumbnailer.thumbnail(for: capture.url)?.size, in: box)
+        return Button { onEdit(capture) } label: {
+            Image(systemName: "pencil")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Self.accent, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1.5))
+                .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .offset(x: (growsLeft ? -1 : 1) * (fitted.width / 2 - 4), y: -fitted.height / 2 + 4)
+        .transition(.scale(scale: 0.4).combined(with: .opacity))
+        .help(String(localized: "Edit in Preview"))
+        .accessibilityLabel(String(localized: "Edit in Preview"))
+    }
+
+    /// Tamaño de la imagen encajada (`.fit`) en `box`.
+    static func fitted(_ image: CGSize?, in box: CGSize) -> CGSize {
+        guard let image, image.width > 0, image.height > 0 else { return box }
+        let k = min(box.width / image.width, box.height / image.height)
+        return CGSize(width: image.width * k, height: image.height * k)
     }
 
     private func folderRow(hidden: Int) -> some View {

@@ -50,7 +50,12 @@ final class PanelController: NSObject, NSWindowDelegate {
             onDismiss: { [weak self] in self?.close(returnFocus: true) },
             initialHover: UserDefaults.standard.object(forKey: "debugHover") as? Int,
             magnification: Settings.magnification,
-            growsLeft: placement.growsLeft
+            growsLeft: placement.growsLeft,
+            onEdit: { [weak self] capture in
+                // El foco va a Vista Previa, no a la app de antes.
+                self?.close(returnFocus: false)
+                Editor.open(capture.url)
+            }
         )
         let host = NSHostingView(rootView: view)
         let m = Settings.magnification
