@@ -1,0 +1,10 @@
+/* Instalador del DMG */
+"Install ShotGenie" = "Instalar ShotGenie";
+"Installing ShotGenie…" = "Instalando ShotGenie…";
+"ShotGenie is installed" = "ShotGenie está instalada";
+"It's open in your Dock. To keep it there, right-click its icon → Options → Keep in Dock." = "Ya está abierta en el Dock. Para que se quede, haz clic derecho en su icono → Opciones → Mantener en el Dock.";
+"Done" = "Listo";
+"Couldn't install ShotGenie" = "No se pudo instalar ShotGenie";
+"Quit" = "Salir";
+"The installer is incomplete: ShotGenie.app is missing. Download it again." = "El instalador está incompleto: falta ShotGenie.app. Vuelve a descargarlo.";
+"There is another app named ShotGenie in %@. Move it away and try again." = "Ya hay otra app llamada ShotGenie en %@. Muévela a otro sitio y vuelve a intentarlo.";

@@ -398,3 +398,18 @@ import Testing
         #expect(p.origin.x + FanLayout.width(rows: rows, magnification: 6) <= screen.maxX - PanelPlacement.margin)
     }
 }
+
+@Suite struct InstallDestinationTests {
+    let system = URL(fileURLWithPath: "/Applications")
+    let user = URL(fileURLWithPath: "/Users/ana/Applications")
+
+    @Test func installsInApplications() {
+        let d = InstallDestination.choose(systemApplications: system, userApplications: user, systemWritable: true)
+        #expect(d.path == "/Applications/ShotGenie.app")
+    }
+
+    @Test func standardUserFallsBackToHomeApplications() {
+        let d = InstallDestination.choose(systemApplications: system, userApplications: user, systemWritable: false)
+        #expect(d.path == "/Users/ana/Applications/ShotGenie.app")
+    }
+}

@@ -37,12 +37,15 @@ The images are made from sample screenshots by `scripts/docs/render.sh` (needs G
 
 ## Download
 
-Get **ShotGenie-0.3.0.zip** from [Releases](https://github.com/enderjnets/ShotGenie/releases/latest). It is a universal app (Apple Silicon and Intel) for macOS 26 or later.
+Get **ShotGenie-0.3.0.dmg** from [Releases](https://github.com/enderjnets/ShotGenie/releases/latest). It is a universal app (Apple Silicon and Intel) for macOS 26 or later.
 
-1. Unzip it and move **ShotGenie.app** to Applications.
-2. Open it. The app is not notarized by Apple, so macOS blocks it the first time: go to **System Settings → Privacy & Security**, scroll down to "ShotGenie was blocked", and click **Open Anyway**. You only do this once.
-3. Right-click the icon in the Dock → Options → **Keep in Dock**.
-4. Optional: allow **Accessibility** in ShotGenie's Settings (⌘,) so the genie lands exactly on the icon.
+1. Open the DMG and double-click **Install ShotGenie**.
+2. The installer is not notarized by Apple, so macOS blocks it the first time: go to **System Settings → Privacy & Security**, scroll down to "Install ShotGenie was blocked", and click **Open Anyway**.
+3. The installer copies ShotGenie to **Applications** (to `~/Applications` if your account is not an administrator) and opens it. It removes the download quarantine from that copy, so macOS doesn't block the app a second time.
+4. Right-click the icon in the Dock → Options → **Keep in Dock**.
+5. Optional: allow **Accessibility** in ShotGenie's Settings (⌘,) so the genie lands exactly on the icon.
+
+The release also has **ShotGenie-0.3.0.zip** with just the app, if you prefer to move it to Applications yourself (then "Open Anyway" applies to ShotGenie).
 
 Prefer to build it yourself? See below.
 
@@ -60,6 +63,8 @@ swift test          # core logic tests
 scripts/build.sh    # builds, signs and installs ~/Applications/ShotGenie.app
 open ~/Applications/ShotGenie.app
 ```
+
+`scripts/make-dmg.sh` builds the downloadable installer, `dist/ShotGenie-<version>.dmg` (it installs [dmgbuild](https://github.com/dmgbuild/dmgbuild) in `.build/` the first time).
 
 Right-click the icon in the Dock → Options → Keep in Dock.
 
@@ -99,11 +104,13 @@ Checked in September 2026. Each covers part of this; none of the ones found comb
 
 - `Sources/ShotGenieCore`: pure logic (fan layout, genie geometry, Dock/screen matching, path escaping), tested with Swift Testing.
 - `Sources/ShotGenie`: the AppKit app (Dock icon, folder watcher, fan panel, genie window, settings).
+- `Sources/ShotGenieInstaller`: "Install ShotGenie", the small app inside the DMG that copies ShotGenie to Applications.
 - `Resources/AppIcon.svg`: the app icon; `scripts/build.sh` turns it into `AppIcon.icns`.
+- `scripts/dmg/`: the DMG window (`background.html` → `Resources/Installer/background.tiff`) and its dmgbuild settings.
 
 ## En español
 
-ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal. Compílala con `scripts/build.sh`. La interfaz sale en español si tu macOS está en español.
+ShotGenie es una app de Dock para tus últimas capturas: el icono muestra la última, el clic abre un abanico con lupa y al hacer clic en una se copia la imagen para pegarla en la terminal. Descárgala como DMG desde Releases (doble clic en «Install ShotGenie») o compílala con `scripts/build.sh`. La interfaz sale en español si tu macOS está en español.
 
 ## License
 
