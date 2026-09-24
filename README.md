@@ -35,7 +35,18 @@ It was built to stop hunting through Finder for the screenshot you just took so 
 
 The images are made from sample screenshots by `scripts/docs/render.sh` (needs Google Chrome and ffmpeg), using the app's own views.
 
-## Requirements
+## Download
+
+Get **ShotGenie-0.3.0.zip** from [Releases](https://github.com/enderjnets/ShotGenie/releases/latest). It is a universal app (Apple Silicon and Intel) for macOS 26 or later.
+
+1. Unzip it and move **ShotGenie.app** to Applications.
+2. Open it. The app is not notarized by Apple, so macOS blocks it the first time: go to **System Settings → Privacy & Security**, scroll down to "ShotGenie was blocked", and click **Open Anyway**. You only do this once.
+3. Right-click the icon in the Dock → Options → **Keep in Dock**.
+4. Optional: allow **Accessibility** in ShotGenie's Settings (⌘,) so the genie lands exactly on the icon.
+
+Prefer to build it yourself? See below.
+
+## Requirements (to build)
 
 - macOS 26 or later
 - Xcode 27 command line tools (Swift 6)

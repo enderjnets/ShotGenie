@@ -6,14 +6,17 @@
 # y el permiso hay que volver a darlo tras cada compilación. Se puede fijar en scripts/local.env.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-[ -f scripts/local.env ] && source scripts/local.env
+# RELEASE=1: versión para publicar (universal, firma ad hoc, sin instalar); no usa local.env.
+if [ -n "${RELEASE:-}" ]; then NO_INSTALL=1; SIGN_IDENTITY=""; ARCHS="--arch arm64 --arch x86_64"
+elif [ -f scripts/local.env ]; then source scripts/local.env; fi
+ARCHS=${ARCHS:-}
 
 BUILD=.build/app
 APP="$BUILD/ShotGenie.app"
 DEST="$HOME/Applications/ShotGenie.app"
 BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Resources/Info.plist)
 
-swift build -c release
+swift build -c release $ARCHS
 rm -rf "$BUILD" && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 # Icono de la app desde el SVG
@@ -21,7 +24,7 @@ swiftc -O scripts/make-icon/main.swift -o "$BUILD/make-icon"
 "$BUILD/make-icon" Resources/AppIcon.svg "$BUILD/AppIcon.iconset"
 iconutil -c icns "$BUILD/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
 
-cp "$(swift build -c release --show-bin-path)/ShotGenie" "$APP/Contents/MacOS/ShotGenie"
+cp "$(swift build -c release $ARCHS --show-bin-path)/ShotGenie" "$APP/Contents/MacOS/ShotGenie"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp -R Resources/*.lproj "$APP/Contents/Resources/"   # traducciones: macOS elige según el idioma del sistema
 
