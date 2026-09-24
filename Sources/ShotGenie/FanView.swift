@@ -14,11 +14,14 @@ struct FanView: View {
     @State private var hovered: Int?
     /// Lo que se amplía la miniatura bajo el cursor (Ajustes).
     private let magnification: CGFloat
+    /// La imagen ampliada crece hacia la izquierda (el icono está cerca del borde derecho).
+    private let growsLeft: Bool
 
     init(store: CaptureStore, onCopy: @escaping (Capture, CopyKind) -> Void, onOpenFolder: @escaping () -> Void,
-         onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification) {
+         onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification, growsLeft: Bool = false) {
         self.store = store
         self.magnification = magnification
+        self.growsLeft = growsLeft
         self.onCopy = onCopy
         self.onOpenFolder = onOpenFolder
         self.onDismiss = onDismiss
@@ -68,7 +71,8 @@ struct FanView: View {
         return content()
             .frame(width: rowWidth, height: FanLayout.thumb.height)
             .rotationEffect(.degrees(p.degrees), anchor: pivot)
-            .offset(x: FanLayout.padding + p.dx, y: -(FanLayout.overflow(magnification: magnification) + p.rise))
+            .offset(x: FanLayout.padding + (growsLeft ? FanLayout.growth(magnification: magnification) : 0) + p.dx,
+                    y: -(FanLayout.overflow(magnification: magnification) + p.rise))
     }
 
     private func captureRow(_ capture: Capture, row k: Int) -> some View {
@@ -86,6 +90,8 @@ struct FanView: View {
                 }
             }
             .frame(width: FanLayout.labelWidth, alignment: .trailing)
+            // Si la imagen crece hacia la izquierda, las etiquetas de su fila se apartan para no quedar debajo.
+            .offset(x: active && growsLeft ? -FanLayout.growth(magnification: magnification) : 0)
 
             // La ampliación cambia el tamaño real (no un scaleEffect), para que el clic
             // funcione en toda la imagen ampliada y no solo en su hueco original.
@@ -96,7 +102,7 @@ struct FanView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .frame(width: FanLayout.thumb.width, height: FanLayout.thumb.height, alignment: .leading)
+            .frame(width: FanLayout.thumb.width, height: FanLayout.thumb.height, alignment: growsLeft ? .trailing : .leading)
             .accessibilityLabel(String(localized: "Copy image of the screenshot from \(Texts.ago(capture.created))"))
         }
     }

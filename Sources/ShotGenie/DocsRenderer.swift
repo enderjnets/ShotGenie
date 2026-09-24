@@ -44,6 +44,12 @@ enum DocsRenderer {
         .frame(width: cropSize.width, height: cropSize.height, alignment: .topLeading)
         .clipped(), scale: 1.25, to: output.appendingPathComponent("fan.png"))
 
+        // 2b. Abanico con la imagen creciendo a la izquierda (icono cerca del borde derecho); no va al README
+        save(FanView(store: store, onCopy: { _, _ in }, onOpenFolder: {}, onDismiss: {}, initialHover: 1, growsLeft: true)
+                .frame(width: fan.width, height: fan.height)
+                .background(Color(white: 0.3)),
+             scale: 1, to: output.appendingPathComponent("fan-left.png"))
+
         // 3. Fotogramas del genio (la captura más nueva entra en el icono)
         guard let image = Thumbnailer.thumbnail(for: newest.url, maxPixel: 1200),
               let pixels = Thumbnailer.pixelSize(of: newest.url) else { return }

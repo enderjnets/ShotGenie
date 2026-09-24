@@ -371,23 +371,30 @@ import Testing
     @Test func thumbnailsCenteredOnTheIconAndBottomRowJustAboveIt() {
         let icon = CGPoint(x: 1600, y: -920)   // centro x, borde superior
         let p = FanPlacement.place(iconTop: icon, rows: rows, magnification: 4.2, screen: screen, visible: screen)
-        #expect(p.magnification == 4.2)
-        #expect(p.origin.x + FanLayout.anchorX == icon.x)   // la miniatura de abajo, centrada en el icono
+        #expect(!p.growsLeft)
+        #expect(p.origin.x + FanLayout.anchorX(magnification: 4.2, growsLeft: false) == icon.x)
         #expect(abs(p.origin.y + FanLayout.overflow(magnification: 4.2) - (icon.y + FanPlacement.gap)) < 0.001)
     }
 
-    @Test func nearTheRightEdgeTheMagnifierShrinksInsteadOfMovingTheFan() {
+    @Test func nearTheRightEdgeTheMagnifiedImageGrowsLeftAtFullSize() {
         let icon = CGPoint(x: 2425, y: -920)   // la prueba real: icono a 245 pt del borde derecho
-        let p = FanPlacement.place(iconTop: icon, rows: rows, magnification: 5.9, screen: screen, visible: screen)
-        #expect(p.magnification < 5.9)
-        #expect(p.origin.x + FanLayout.anchorX == icon.x)
-        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: p.magnification) <= screen.maxX - PanelPlacement.margin)
+        let p = FanPlacement.place(iconTop: icon, rows: rows, magnification: 6, screen: screen, visible: screen)
+        #expect(p.growsLeft)
+        #expect(p.origin.x + FanLayout.anchorX(magnification: 6, growsLeft: true) == icon.x)
+        #expect(p.origin.x >= screen.minX + PanelPlacement.margin)
+        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: 6) <= screen.maxX - PanelPlacement.margin)
+    }
+
+    @Test func panelWidthIsTheSameWhicheverWayItGrows() {
+        // La ampliación hacia la izquierda solo mueve el ancla; el ancho total no cambia.
+        let m: CGFloat = 5
+        #expect(FanLayout.anchorX(magnification: m, growsLeft: true) - FanLayout.anchorX(magnification: m, growsLeft: false)
+                == FanLayout.growth(magnification: m))
     }
 
     @Test func atTheVeryEdgeItStillFitsOnScreen() {
         let icon = CGPoint(x: screen.maxX - 5, y: -920)
-        let p = FanPlacement.place(iconTop: icon, rows: rows, magnification: 5.9, screen: screen, visible: screen)
-        #expect(p.magnification == FanLayout.magnificationRange.lowerBound)
-        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: p.magnification) <= screen.maxX - PanelPlacement.margin)
+        let p = FanPlacement.place(iconTop: icon, rows: rows, magnification: 6, screen: screen, visible: screen)
+        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: 6) <= screen.maxX - PanelPlacement.margin)
     }
 }

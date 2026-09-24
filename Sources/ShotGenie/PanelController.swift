@@ -49,10 +49,11 @@ final class PanelController: NSObject, NSWindowDelegate {
             },
             onDismiss: { [weak self] in self?.close(returnFocus: true) },
             initialHover: UserDefaults.standard.object(forKey: "debugHover") as? Int,
-            magnification: placement.magnification
+            magnification: Settings.magnification,
+            growsLeft: placement.growsLeft
         )
         let host = NSHostingView(rootView: view)
-        let m = placement.magnification
+        let m = Settings.magnification
         let size = CGSize(width: FanLayout.width(rows: rows, magnification: m), height: FanLayout.height(rows: rows, magnification: m))
 
         let panel = KeyPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -69,7 +70,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
 
         panel.setFrameOrigin(placement.origin)
-        DebugLog.note("cursor \(mouse) icono \(iconTop.map { "\($0)" } ?? "desconocido (se usa el cursor)") pantalla \(screen.frame) lupa \(Settings.magnification)→\(m)")
+        DebugLog.note("cursor \(mouse) icono \(iconTop.map { "\($0)" } ?? "desconocido (se usa el cursor)") pantalla \(screen.frame) lupa \(m) hacia \(placement.growsLeft ? "la izquierda" : "la derecha")")
 
         self.panel?.orderOut(nil)
         self.panel = panel

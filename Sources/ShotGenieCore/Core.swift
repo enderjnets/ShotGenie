@@ -101,8 +101,8 @@ public enum PanelPlacement {
 }
 
 /// Dónde abrir el abanico, como las pilas del Dock: la columna de miniaturas centrada sobre el
-/// icono y la fila de abajo pegada a su borde superior. Si la imagen ampliada no cabe a la derecha
-/// (icono cerca del borde), se reduce la lupa lo justo en vez de mover el abanico.
+/// icono y la fila de abajo pegada a su borde superior. La imagen ampliada crece hacia la derecha;
+/// si ahí no cabe (icono cerca del borde), crece hacia la izquierda, siempre a tamaño completo.
 public enum FanPlacement {
     /// Hueco entre el borde superior del icono y la primera miniatura.
     public static let gap: CGFloat = 10
@@ -114,22 +114,19 @@ public enum FanPlacement {
 
     /// `iconTop`: centro horizontal del icono y su borde superior (coordenadas de AppKit).
     public static func place(iconTop: CGPoint, rows: Int, magnification m: CGFloat, screen: CGRect, visible: CGRect)
-        -> (origin: CGPoint, magnification: CGFloat) {
+        -> (origin: CGPoint, growsLeft: Bool) {
         let margin = PanelPlacement.margin
-        let left = iconTop.x - FanLayout.anchorX
-        var mag = FanLayout.clampMagnification(m)
-        while mag > FanLayout.magnificationRange.lowerBound,
-              left + FanLayout.width(rows: rows, magnification: mag) > screen.maxX - margin {
-            mag = max(FanLayout.magnificationRange.lowerBound, mag - 0.1)
-        }
+        let mag = FanLayout.clampMagnification(m)
         let w = FanLayout.width(rows: rows, magnification: mag)
         let h = FanLayout.height(rows: rows, magnification: mag)
-        let x = min(max(left, screen.minX + margin), screen.maxX - w - margin)
+        let rightX = iconTop.x - FanLayout.anchorX(magnification: mag, growsLeft: false)
+        let leftX = iconTop.x - FanLayout.anchorX(magnification: mag, growsLeft: true)
+        let growsLeft = rightX + w > screen.maxX - margin && leftX >= screen.minX + margin
+        let x = min(max(growsLeft ? leftX : rightX, screen.minX + margin), screen.maxX - w - margin)
         // La fila de abajo empieza `gap` sobre el icono; el hueco para ampliarla queda por debajo
         // y puede pasar por encima del Dock (el panel está por encima de él).
-        var y = iconTop.y + gap - FanLayout.overflow(magnification: mag)
-        y = min(y, visible.maxY - h)
-        return (CGPoint(x: x, y: y), mag)
+        let y = min(iconTop.y + gap - FanLayout.overflow(magnification: mag), visible.maxY - h)
+        return (CGPoint(x: x, y: y), growsLeft)
     }
 }
 
@@ -171,6 +168,15 @@ public enum FanLayout {
 
     /// Centro horizontal de la columna de miniaturas en la fila 0 (lo que va sobre el icono del Dock).
     public static var anchorX: CGFloat { padding + labelWidth + gap + thumb.width / 2 }
+
+    /// Lo que la miniatura ampliada gana de ancho.
+    public static func growth(magnification m: CGFloat) -> CGFloat { thumb.width * (m - 1) }
+
+    /// Con la ampliación hacia la izquierda, el sitio para ella queda a la izquierda de las etiquetas
+    /// (el ancho total del panel no cambia).
+    public static func anchorX(magnification m: CGFloat, growsLeft: Bool) -> CGFloat {
+        anchorX + (growsLeft ? growth(magnification: m) : 0)
+    }
 
     public static func width(rows: Int, magnification m: CGFloat = defaultMagnification) -> CGFloat {
         let top = placement(row: max(rows - 1, 0))
