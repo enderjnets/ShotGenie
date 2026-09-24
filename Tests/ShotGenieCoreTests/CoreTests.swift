@@ -362,3 +362,32 @@ import Testing
         #expect(p.y > laptop.maxY - 10 && p.y <= laptop.maxY)             // borde superior del portátil
     }
 }
+
+@Suite struct FanPlacementTests {
+    // Pantalla del portátil de la prueba real (coordenadas de AppKit).
+    let screen = CGRect(x: 1158, y: -982, width: 1512, height: 982)
+    let rows = 6
+
+    @Test func thumbnailsStayOverTheIconAndBottomRowJustAboveIt() {
+        let mouse = CGPoint(x: 1600, y: -958)
+        let p = FanPlacement.place(mouse: mouse, rows: rows, magnification: 4.2, screen: screen, visible: screen)
+        #expect(p.magnification == 4.2)
+        #expect(p.origin.x == mouse.x - FanLayout.anchorX)
+        #expect(abs(p.origin.y + FanLayout.overflow(magnification: 4.2) - (mouse.y + PanelPlacement.aboveCursor)) < 0.001)
+    }
+
+    @Test func nearTheRightEdgeTheMagnifierShrinksInsteadOfMovingTheFan() {
+        let mouse = CGPoint(x: 2450, y: -958)   // icono a 220 pt del borde derecho
+        let p = FanPlacement.place(mouse: mouse, rows: rows, magnification: 5.9, screen: screen, visible: screen)
+        #expect(p.magnification < 5.9)
+        #expect(p.origin.x == mouse.x - FanLayout.anchorX)
+        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: p.magnification) <= screen.maxX - PanelPlacement.margin)
+    }
+
+    @Test func atTheVeryEdgeItStillFitsOnScreen() {
+        let mouse = CGPoint(x: screen.maxX - 5, y: -958)
+        let p = FanPlacement.place(mouse: mouse, rows: rows, magnification: 5.9, screen: screen, visible: screen)
+        #expect(p.magnification == FanLayout.magnificationRange.lowerBound)
+        #expect(p.origin.x + FanLayout.width(rows: rows, magnification: p.magnification) <= screen.maxX - PanelPlacement.margin)
+    }
+}

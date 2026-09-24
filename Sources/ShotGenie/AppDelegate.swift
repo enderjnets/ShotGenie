@@ -50,16 +50,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidResignActive(_ notification: Notification) {
+        DebugLog.note("app deja de estar activa; delante: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "?")")
         panel.appDidResignActive()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
+        DebugLog.note("app activa")
         // Por si se cambió la carpeta de capturas en Ajustes mientras la app estaba abierta.
         store.start()
     }
 
     /// Clic en el icono del Dock con la app ya abierta.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        DebugLog.note("reapertura (clic en el Dock); activa=\(NSApp.isActive) visible=\(panel.isVisible) delante=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "?")")
         GenieController.rememberDockPoint(NSEvent.mouseLocation)
         panel.toggle()
         return false

@@ -100,6 +100,30 @@ public enum PanelPlacement {
     }
 }
 
+/// Dónde abrir el abanico: la columna de miniaturas justo encima del icono (el cursor) y la fila
+/// de abajo pegada a él. Si la imagen ampliada no cabe a la derecha (icono cerca del borde), se
+/// reduce la lupa lo justo en vez de mover el abanico, que dejaría de estar sobre el icono.
+public enum FanPlacement {
+    public static func place(mouse: CGPoint, rows: Int, magnification m: CGFloat, screen: CGRect, visible: CGRect)
+        -> (origin: CGPoint, magnification: CGFloat) {
+        let margin = PanelPlacement.margin
+        let left = mouse.x - FanLayout.anchorX
+        var mag = FanLayout.clampMagnification(m)
+        while mag > FanLayout.magnificationRange.lowerBound,
+              left + FanLayout.width(rows: rows, magnification: mag) > screen.maxX - margin {
+            mag = max(FanLayout.magnificationRange.lowerBound, mag - 0.1)
+        }
+        let w = FanLayout.width(rows: rows, magnification: mag)
+        let h = FanLayout.height(rows: rows, magnification: mag)
+        let x = min(max(left, screen.minX + margin), screen.maxX - w - margin)
+        // La fila de abajo empieza `aboveCursor` sobre el cursor; el hueco para ampliarla queda
+        // por debajo y puede pasar por encima del Dock (el panel está por encima de él).
+        var y = mouse.y + PanelPlacement.aboveCursor - FanLayout.overflow(magnification: mag)
+        y = min(y, visible.maxY - h)
+        return (CGPoint(x: x, y: y), mag)
+    }
+}
+
 /// Abanico como el de las pilas del Dock: las filas suben desde el icono en un arco
 /// que se abre hacia la derecha y se inclina. Fila 0 = la captura más nueva (abajo).
 public enum FanLayout {

@@ -13,11 +13,12 @@ struct FanView: View {
 
     @State private var hovered: Int?
     /// Lo que se amplía la miniatura bajo el cursor (Ajustes).
-    private var magnification: CGFloat { Settings.magnification }
+    private let magnification: CGFloat
 
     init(store: CaptureStore, onCopy: @escaping (Capture, CopyKind) -> Void, onOpenFolder: @escaping () -> Void,
-         onDismiss: @escaping () -> Void, initialHover: Int? = nil) {
+         onDismiss: @escaping () -> Void, initialHover: Int? = nil, magnification: CGFloat = Settings.magnification) {
         self.store = store
+        self.magnification = magnification
         self.onCopy = onCopy
         self.onOpenFolder = onOpenFolder
         self.onDismiss = onDismiss

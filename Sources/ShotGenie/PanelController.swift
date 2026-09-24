@@ -30,6 +30,11 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     func show() {
         store.reload()
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
+        let rows = store.captures.count + 1
+        let placement = FanPlacement.place(mouse: mouse, rows: rows, magnification: Settings.magnification,
+                                           screen: screen.frame, visible: screen.visibleFrame)
         let view = FanView(
             store: store,
             onCopy: { [weak self] capture, kind in self?.didCopy(capture, kind) },
@@ -38,14 +43,14 @@ final class PanelController: NSObject, NSWindowDelegate {
                 self?.onOpenFolder?()
             },
             onDismiss: { [weak self] in self?.close(returnFocus: true) },
-            initialHover: UserDefaults.standard.object(forKey: "debugHover") as? Int
+            initialHover: UserDefaults.standard.object(forKey: "debugHover") as? Int,
+            magnification: placement.magnification
         )
         let host = NSHostingView(rootView: view)
-        let rows = store.captures.count + 1
-        let m = Settings.magnification
+        let m = placement.magnification
         let size = CGSize(width: FanLayout.width(rows: rows, magnification: m), height: FanLayout.height(rows: rows, magnification: m))
 
-        let panel = KeyPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+        let panel = KeyPanel(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isFloatingPanel = true
         panel.level = .popUpMenu
         panel.backgroundColor = .clear
@@ -58,22 +63,22 @@ final class PanelController: NSObject, NSWindowDelegate {
         // En todos los escritorios y encima de las apps a pantalla completa, como el menú del Dock.
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
 
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
-        if let screen {
-            let origin = PanelPlacement.origin(mouse: mouse, panel: size, anchorX: FanLayout.anchorX, screen: screen.frame, visible: screen.visibleFrame)
-            panel.setFrameOrigin(origin)
-        }
+        panel.setFrameOrigin(placement.origin)
+        DebugLog.note("cursor \(mouse) pantalla \(screen.frame) lupa \(Settings.magnification)→\(m)")
 
         self.panel?.orderOut(nil)
         self.panel = panel
         // Que el Dock no se esconda mientras se elige (si no, el abanico queda colgando).
         DockAutoHide.suspend()
-        // Primero la ventana y luego activar: así macOS no salta a otro escritorio donde haya
-        // otra ventana de la app (Ajustes) y el abanico se ve en la pantalla actual.
+        // Panel «no activador»: macOS solo deja estas ventanas encima de la pantalla completa de
+        // otra app (una ventana normal se queda en el escritorio, invisible). Puede ser la ventana
+        // clave (Esc) sin activar la app, y así tampoco salta a otro escritorio.
         panel.orderFrontRegardless()
-        NSApp.activate()
-        panel.makeKeyAndOrderFront(nil)
+        panel.makeKey()
+        DebugLog.note("abanico mostrado en \(panel.frame); espacio activo=\(panel.isOnActiveSpace)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak panel] in
+            DebugLog.note("0,4 s después: visible=\(panel?.isVisible ?? false) enEspacio=\(panel?.isOnActiveSpace ?? false) clave=\(panel?.isKeyWindow ?? false) appActiva=\(NSApp.isActive) oclusión=\(panel?.occlusionState.contains(.visible) ?? false)")
+        }
         writeDebugSnapshot(of: host)
     }
 
@@ -89,6 +94,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     func close(returnFocus shouldReturn: Bool) {
         guard let panel else { return }
+        DebugLog.note("cierre (devolver foco=\(shouldReturn))")
         panel.delegate = nil
         panel.orderOut(nil)
         self.panel = nil
@@ -107,6 +113,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
+        DebugLog.note("el abanico deja de ser ventana clave; appActiva=\(NSApp.isActive)")
         // Clic en otra app: el foco ya va adonde el usuario hizo clic.
         // Si la que toma el foco es otra ventana de esta app (Ajustes), el abanico sigue abierto.
         DispatchQueue.main.async { [weak self] in
